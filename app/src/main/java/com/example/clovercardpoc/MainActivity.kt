@@ -7,8 +7,8 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.clover.sdk.v1.Intents
-import com.clover.sdk.v3.payments.Payment
-import com.clover.sdk.v3.payments.api.PaymentRequestIntentBuilder
+import com.clover.sdk.v3.tokens.Card
+import com.clover.sdk.v3.payments.api.TokenizeCardRequestIntentBuilder
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,8 +30,13 @@ class MainActivity : AppCompatActivity() {
         btnClear = findViewById(R.id.btnClear)
 
         btnTokenize.setOnClickListener {
-            appendLog("Start tokenizacji przez payment flow...")
-            startTokenize()
+            appendLog("Start czystej tokenizacji karty...")
+            try {
+                startTokenize()
+            } catch (e: Exception) {
+                appendLog("EXCEPTION: ${e.javaClass.simpleName}: ${e.message}")
+                Log.e(TAG, "startTokenize failed", e)
+            }
         }
 
         btnClear.setOnClickListener {
@@ -40,19 +45,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         appendLog("App started")
-        appendLog("Jeśli to widzisz na Cloverze, deploy działa poprawnie.")
+        appendLog("Tryb: tokenizacja karty bez payment flow")
     }
 
     private fun startTokenize() {
-        val externalPaymentId = "poc-" + System.currentTimeMillis()
-        val amount = 1L
-
-        val builder = PaymentRequestIntentBuilder(externalPaymentId, amount)
-        builder.tokenizeOptions(
-            PaymentRequestIntentBuilder.TokenizeOptions.Instance(false)
-        )
-
-        val intent = builder.build(this)
+        val intent = TokenizeCardRequestIntentBuilder().build(this)
         startActivityForResult(intent, TOKENIZE_REQUEST_CODE)
     }
 
@@ -60,21 +57,25 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == TOKENIZE_REQUEST_CODE) {
-            if (resultCode == RESULT_OK && data != null) {
-                val payment = data.getParcelableExtra<Payment>(Intents.EXTRA_PAYMENT)
-                val token = data.getStringExtra(Intents.EXTRA_TOKEN)
-                val tokenType = data.getStringExtra(Intents.EXTRA_TOKEN_TYPE)
+        if (requestCode != TOKENIZE_REQUEST_CODE) return
 
-                appendLog("=== SUCCESS ===")
-                appendLog("payment: $payment")
-                appendLog("token: $token")
-                appendLog("tokenType: $tokenType")
-            } else {
-                val error = data?.getStringExtra(Intents.EXTRA_FAILURE_MESSAGE)
-                appendLog("=== ERROR ===")
-                appendLog("error: $error")
-            }
+        if (resultCode == RESULT_OK && data != null) {
+            val token = data.getStringExtra(Intents.EXTRA_TOKEN)
+            val tokenType = data.getStringExtra(Intents.EXTRA_TOKEN_TYPE)
+            val card = data.getParcelableExtra<Card>(Intents.EXTRA_CARD)
+
+            appendLog("=== SUCCESS ===")
+            appendLog("resultCode: $resultCode")
+            appendLog("token: $token")
+            appendLog("tokenType: $tokenType")
+            appendLog("card: $card")
+        } else {
+            val error = data?.getStringExtra(Intents.EXTRA_FAILURE_MESSAGE)
+
+            appendLog("=== ERROR ===")
+            appendLog("resultCode: $resultCode")
+            appendLog("data is null: ${data == null}")
+            appendLog("error: $error")
         }
     }
 
