@@ -59,6 +59,13 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode != TOKENIZE_REQUEST_CODE) return
 
+        if (requestCode == TOKENIZE_REQUEST_CODE) {
+            appendLog("=== TOKENIZE RESULT ===")
+            appendLog("resultCode: $resultCode")
+            appendLog("data is null: ${data == null}")
+            dumpIntentExtras(data)
+        }
+
         if (resultCode == RESULT_OK && data != null) {
             val token = data.getStringExtra(Intents.EXTRA_TOKEN)
             val tokenType = data.getStringExtra(Intents.EXTRA_TOKEN_TYPE)
@@ -82,5 +89,24 @@ class MainActivity : AppCompatActivity() {
     private fun appendLog(message: String) {
         Log.d(TAG, message)
         txtLog.append(message + "\n")
+    }
+
+    private fun dumpIntentExtras(data: Intent?) {
+        if (data == null) {
+            appendLog("dumpIntentExtras: data == null")
+            return
+        }
+
+        val extras = data.extras
+        if (extras == null) {
+            appendLog("dumpIntentExtras: extras == null")
+            return
+        }
+
+        appendLog("=== ALL INTENT EXTRAS ===")
+        for (key in extras.keySet()) {
+            val value = extras.get(key)
+            appendLog("$key = $value")
+        }
     }
 }
